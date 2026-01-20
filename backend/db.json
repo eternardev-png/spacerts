@@ -1,0 +1,13 @@
+{
+    "users": {
+        "user_123": {
+            "scrap": 0,
+            "highScore": 0,
+            "upgrades": {
+                "drill": 0,
+                "armor": 0,
+                "speed": 0
+            }
+        }
+    }
+}

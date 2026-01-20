@@ -13,10 +13,11 @@ export const api = {
 
     async saveRun(userId, score, scrap, waves) {
         try {
+            const initData = window.Telegram?.WebApp?.initData || "";
             const res = await fetch(`${API_URL}/save-run`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, score, scrap, waves })
+                body: JSON.stringify({ userId, score, scrap, waves, initData })
             });
             return await res.json();
         } catch (e) {
@@ -27,10 +28,11 @@ export const api = {
 
     async buyUpgrade(userId, upgradeId) {
         try {
+            const initData = window.Telegram?.WebApp?.initData || "";
             const res = await fetch(`${API_URL}/upgrade`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, upgradeId })
+                body: JSON.stringify({ userId, upgradeId, initData })
             });
             if (!res.ok) throw new Error('Failed');
             return await res.json();

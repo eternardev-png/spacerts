@@ -1,11 +1,15 @@
 import json
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Dict, Optional
 from fastapi.middleware.cors import CORSMiddleware
+import hmac
+import hashlib
+import urllib.parse
+
 
 app = FastAPI()
 
@@ -35,18 +39,54 @@ def save_db(data):
         json.dump(data, f, indent=4)
 
 # --- Models ---
+# --- Security ---
+BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE") # Get from Env
+
+def validate_telegram_data(init_data: str) -> bool:
+    if not init_data:
+        return False
+    if BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
+        print("WARNING: BOT_TOKEN not set, skipping validation")
+        return True
+        
+    try:
+        parsed_data = urllib.parse.parse_qsl(init_data)
+        data_dict = dict(parsed_data)
+        
+        hash_value = data_dict.get('hash')
+        if not hash_value:
+            return False
+            
+        data_dict.pop('hash', None)
+        
+        # Sort keys
+        sorted_data = sorted(data_dict.items())
+        data_check_string = '\n'.join([f"{k}={v}" for k, v in sorted_data])
+        
+        secret_key = hmac.new(b"WebAppData", BOT_TOKEN.encode(), hashlib.sha256).digest()
+        calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+        
+        return calculated_hash == hash_value
+    except Exception as e:
+        print(f"Validation Error: {e}")
+        return False
+
 class InitData(BaseModel):
-    initData: str # We will skip complex validation for MVP, just use user_id from it or mock
+    initData: str 
+
 
 class SaveRunRequest(BaseModel):
     userId: str # Telegram ID (string)
     score: int
     scrap: int
     waves: int
+    initData: str = ""
 
 class UpgradeRequest(BaseModel):
     userId: str
     upgradeId: str # 'drill', 'armor', 'speed'
+    initData: str = ""
+
 
 # --- Endpoints ---
 
@@ -81,6 +121,9 @@ def get_profile(user_id: str):
 
 @app.post("/api/save-run")
 def save_run(req: SaveRunRequest):
+    if not validate_telegram_data(req.initData):
+        raise HTTPException(status_code=403, detail="Invalid Telegram Data")
+
     db = load_db()
     user = db["users"].get(req.userId)
     if not user:
@@ -98,6 +141,9 @@ def save_run(req: SaveRunRequest):
 
 @app.post("/api/upgrade")
 def buy_upgrade(req: UpgradeRequest):
+    if not validate_telegram_data(req.initData):
+        raise HTTPException(status_code=403, detail="Invalid Telegram Data")
+
     db = load_db()
     user = db["users"].get(req.userId)
     if not user:

@@ -48,6 +48,11 @@ export class GameEngine {
 
         this.loop = this.loop.bind(this);
 
+        // Bind Input Handlers for Cleanup
+        this.handlePointerDown = this.handlePointerDown.bind(this);
+        this.handlePointerMove = this.handlePointerMove.bind(this);
+        this.handlePointerUp = this.handlePointerUp.bind(this);
+
         this.initWorld();
         this.setupInput();
     }
@@ -87,39 +92,43 @@ export class GameEngine {
         this.lassoStart = { x: 0, y: 0 };
         this.lassoCurrent = { x: 0, y: 0 };
 
-        this.canvas.addEventListener('pointerdown', (e) => {
-            // Resume Audio Context on interaction
-            this.audio.init();
+        this.canvas.addEventListener('pointerdown', this.handlePointerDown);
+        this.canvas.addEventListener('pointermove', this.handlePointerMove);
+        this.canvas.addEventListener('pointerup', this.handlePointerUp);
+    }
 
+    handlePointerDown(e) {
+        // Resume Audio Context on interaction
+        this.audio.init();
+
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (this.isLassoMode) {
+            this.isDraggingLasso = true;
+            this.lassoStart = { x, y };
+            this.lassoCurrent = { x, y };
+        } else {
+            this.handleInput(x, y);
+        }
+    }
+
+    handlePointerMove(e) {
+        if (this.isDraggingLasso) {
             const rect = this.canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            this.lassoCurrent = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+    }
 
-            if (this.isLassoMode) {
-                this.isDraggingLasso = true;
-                this.lassoStart = { x, y };
-                this.lassoCurrent = { x, y };
-            } else {
-                this.handleInput(x, y);
-            }
-        });
-
-        this.canvas.addEventListener('pointermove', (e) => {
-            if (this.isDraggingLasso) {
-                const rect = this.canvas.getBoundingClientRect();
-                this.lassoCurrent = {
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top
-                };
-            }
-        });
-
-        this.canvas.addEventListener('pointerup', (e) => {
-            if (this.isDraggingLasso) {
-                this.isDraggingLasso = false;
-                this.finishLassoSelection();
-            }
-        });
+    handlePointerUp(e) {
+        if (this.isDraggingLasso) {
+            this.isDraggingLasso = false;
+            this.finishLassoSelection();
+        }
     }
 
     toggleLassoMode() {
@@ -235,6 +244,14 @@ export class GameEngine {
         this.isRunning = false;
     }
 
+    destroy() {
+        this.stop();
+        this.canvas.removeEventListener('pointerdown', this.handlePointerDown);
+        this.canvas.removeEventListener('pointermove', this.handlePointerMove);
+        this.canvas.removeEventListener('pointerup', this.handlePointerUp);
+        console.log("GameEngine destroyed, listeners removed.");
+    }
+
     resize(width, height) {
         this.width = width;
         this.height = height;
@@ -309,7 +326,8 @@ export class GameEngine {
                 if (b.modules.solar > 0) {
                     const income = b.modules.solar * 1 * dt; // $1 per sec per level
                     this.credits += income;
-                    this.onGameStateChange({ credits: this.credits });
+                    // Removed onGameStateChange call to prevent frame-rate UI spam
+                    // UI is updated via uiTimer loop
                 }
 
                 // 2. Repair Arm (Heal nearby)
