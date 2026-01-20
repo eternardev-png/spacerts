@@ -3,8 +3,9 @@ import GameView from './components/GameView';
 import { MainMenu } from './components/MainMenu';
 import { HangarView } from './components/HangarView';
 
-// Mock User ID for MVP (In real TWA use Telegram user ID)
-const USER_ID = "user_123";
+// Get User ID from Telegram or Mock
+const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+const USER_ID = telegramUser ? String(telegramUser.id) : "user_123";
 
 const App = () => {
   const [view, setView] = useState('menu'); // menu, game, hangar

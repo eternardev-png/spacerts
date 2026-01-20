@@ -4,7 +4,7 @@ import { api } from '../api';
 import BuildMenu from './BuildMenu';
 import UpgradeMenu from './UpgradeMenu';
 
-const GameView = () => {
+const GameView = ({ userId }) => {
     const canvasRef = useRef(null);
     const engineRef = useRef(null);
     const [credits, setCredits] = useState(150);
