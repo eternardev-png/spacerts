@@ -1,0 +1,755 @@
+Here is the breakdown of the visual style and gameplay, followed by the 4-part Technical Specification (TS) designed to be copied and pasted directly to your AI programmer.
+
+### 1. Style & Gameplay Characterization (Context for the Team)
+
+**Visual Style (For Designer & Coder):**
+
+* **Aesthetic:** **Hi-Bit Industrial Sci-Fi.** Think *Factorio* meets *Starcraft 1*, but with a cleaner, mobile-friendly pixel art style.
+* **Palette:** High contrast. Deep black/void background. Bases are metallic (Yellow/Blue/Orange) with "busy" details like pipes, vents, and solar panels. Important elements (resources, lasers, shields) use neon colors to pop against the dark background.
+* **Vibe:** Functional and gritty. Not sleek Apple-style sci-fi, but rugged space-miner tech.
+* **UI:** Retro-futuristic HUD. Pixelated fonts, distinct borders around unit icons, green health bars, clear resource counters.
+
+**Gameplay Overview (For Coder):**
+
+* **Genre:** Single-screen Micro-RTS (Real-Time Strategy).
+* **Core Loop:**
+1. **Macro:** Managing the Main Base (HQ).
+2. **Economy:** Building "Miner Drones" to harvest "Crystals" from nearby asteroids.
+3. **Production:** Spending currency to build combat units (Light, Heavy, Kamikaze).
+4. **Combat:** Units auto-attack enemies in range. The goal is to destroy the enemy HQ.
+
+
+* **Control Scheme:** Tap-based. Tap unit -> Tap location (Move) or Tap Enemy (Attack).
+
+---
+
+### Technical Specification for MVP (Telegram Mini App)
+
+**Stack:** Python (FastAPI), JavaScript, React, Vite.
+**Architecture:** React handles the UI (HUD), HTML5 Canvas handles the Game World (rendering).
+
+---
+
+### PART 1: Project Setup & The Game Loop
+
+**Prompt for AI:**
+
+```markdown
+**Task 1: Project Initialization and Core Game Engine**
+
+**Context:**
+We are building a 2D Space RTS Telegram Mini App.
+**Tech Stack:** Frontend: React + Vite + Vanilla JS (for game logic). Backend: Python (FastAPI).
+**Goal:** Set up the project structure and the main rendering loop on an HTML5 Canvas.
+
+**Requirements:**
+
+1.  **Project Structure:**
+    * Initialize a React + Vite project (`frontend/`).
+    * Initialize a Python FastAPI project (`backend/`).
+    * Create a folder `frontend/src/game` to hold non-React game logic classes.
+
+2.  **The Game Canvas (Frontend):**
+    * Create a React Component `GameView.jsx` that contains a `<canvas>` element.
+    * The canvas must resize dynamically to fit the window (mobile responsive).
+
+3.  **The Game Loop (Core Logic):**
+    * Create a class `GameEngine.js` in `src/game/`.
+    * Implement the **Loop**: Use `requestAnimationFrame` to create a continuous render loop.
+    * Implement `update(deltaTime)`: A method to calculate logic (placeholder for now).
+    * Implement `draw(context)`: A method to clear the canvas and render objects.
+    * Connect `GameEngine` to the React component so the loop starts when the component mounts and stops when it unmounts.
+
+4.  **Backend Connectivity:**
+    * Create a simple `main.py` with a generic "Hello World" endpoint to ensure the server runs.
+    * Configure CORS to allow the frontend to talk to the backend.
+
+**Output:**
+Provide the folder structure, the `GameEngine` class code, the `GameView` React component, and the basic `main.py`.
+
+```
+
+---
+
+### PART 2: The Entity System (Units & Objects)
+
+**Prompt for AI:**
+
+```markdown
+**Task 2: Entity System and Object Rendering**
+
+**Context:**
+We have the game loop running. Now we need to populate the world with objects based on the user's drawing: Bases, Asteroids, and Units.
+
+**Requirements:**
+
+1.  **Base Entity Class (`GameObject`):**
+    * Create a base class `GameObject` with properties: `x`, `y`, `width`, `height`, `color`, `type`, `health`, `maxHealth`.
+    * Add a `draw(ctx)` method to render a simple rectangle (placeholder for sprites) representing the object.
+
+2.  **Specific Entities:**
+    * **BaseStation:** Large, static square (Yellow for player, Blue for enemy). High HP.
+    * **Asteroid:** Static, grey irregular shapes. Contains a `resourceAmount` property.
+    * **Unit:** Mobile entities. Add properties: `speed`, `target` (x, y), `state` (IDLE, MOVING, ATTACKING, MINING).
+
+3.  **EntityManager:**
+    * Update `GameEngine` to hold arrays of entities: `playerUnits`, `enemyUnits`, `asteroids`, `buildings`.
+    * In the `update()` loop, iterate through these arrays to update positions.
+    * In the `draw()` loop, iterate through these arrays to render them.
+
+4.  **Mock Data:**
+    * On `init`, spawn 1 Player Base (bottom left), 1 Enemy Base (top right), and 5 random Asteroids in the middle.
+
+**Output:**
+Provide the code for `GameObject`, `Unit`, `Asteroid` classes, and the updated `GameEngine` showing how to render these lists.
+
+```
+
+---
+
+### PART 3: Movement, Mining & Economy
+
+**Prompt for AI:**
+
+```markdown
+**Task 3: Interaction, Movement Logic, and Economy**
+
+**Context:**
+We have objects on the screen. Now we need to make them interactive and implement the mining mechanic shown in the concept art.
+
+**Requirements:**
+
+1.  **Input Handling (Mouse/Touch):**
+    * Implement raycasting/click detection. When the user taps the canvas, check if they tapped a Unit (Select) or empty space (Move).
+    * Draw a selection circle around the currently selected unit.
+
+2.  **Movement Logic:**
+    * Implement a `moveTo(targetX, targetY)` method in the `Unit` class.
+    * Units should move towards their target every frame based on their `speed` and `deltaTime`.
+    * *Simple Collision:* Prevent units from overlapping exactly with each other or entering the Base's bounding box.
+
+3.  **Mining Mechanic (The Miner Unit):**
+    * Create a specific unit type: `Miner`.
+    * **Logic:**
+        1.  Player selects Miner -> Taps Asteroid.
+        2.  Miner moves to Asteroid range.
+        3.  Miner draws a "laser beam" line to the asteroid.
+        4.  Every 1 second, Asteroid `resourceAmount` decreases, and Player `credits` increases.
+        5.  Visual: Add a floating text effect ("+5$") when resources are gathered.
+
+4.  **UI HUD Integration:**
+    * Update the React App to show a `Resources` counter at the top.
+    * Pass the game state (current money) from `GameEngine` back to React (using a callback or state).
+
+**Output:**
+Provide the updated `Unit` movement logic, the `Miner` specific logic, and how to bridge the resource count to the React UI.
+
+```
+
+---
+
+### PART 4: Combat, Unit Production & Telegram Integration
+
+**Prompt for AI:**
+
+```markdown
+**Task 4: Combat System, Unit Production, and Telegram Deployment**
+
+**Context:**
+The economy is working. Now we need the "War" part and the integration into Telegram.
+
+**Requirements:**
+
+1.  **Combat Logic:**
+    * Add `attackRange` and `damage` to Units.
+    * **Auto-Attack:** If an enemy is within `attackRange`, the unit stops moving and fires (draw a projectile or laser line).
+    * **Damage:** Reduce target `health`. If `health <= 0`, remove the entity from the array (Death).
+    * **Win Condition:** If `BaseStation` health is 0, trigger Game Over.
+
+2.  **Unit Production (React UI):**
+    * Create a `BuildMenu` component (bottom of screen as per design) with buttons for units (e.g., Miner: $5, Soldier: $15).
+    * **Interaction:** Clicking a button checks if Player has enough credits. If yes -> deduct credits -> spawn Unit near the Player Base.
+
+3.  **Telegram Mini App Integration:**
+    * Install `@twa-dev/sdk`.
+    * In `App.jsx`, initialize the WebApp: `WebApp.ready()`.
+    * **Backend Validation:** When the app starts, send the `WebApp.initData` string to the Python backend to verify the user is legitimate (hash validation).
+
+4.  **Polish:**
+    * Add a simple "Fog of War" (optional): Darken areas far from player units.
+
+**Output:**
+Provide the Combat logic (distance checks), the `BuildMenu` component connected to the engine, and the Python code for validating Telegram Init Data.
+
+```
+
+Вот **Часть 2** Технического Задания.
+
+В этой части мы "оживляем" пустой экран. Мы добавим систему сущностей (классы для Базы, Юнитов и Астероидов) и научим движок их отрисовывать. Мы пока используем простые геометрические фигуры (квадраты/круги) вместо картинок, чтобы быстрее настроить логику.
+
+Копируй текст ниже и отправляй ИИ.
+
+---
+
+### ТЗ Часть 2: Система Сущностей и Отрисовка Мира
+
+**Prompt for AI:**
+
+```markdown
+**Task 2: Entity System, Classes, and World Population**
+
+**Context:**
+We have the basic `GameEngine` loop running. Now we need to populate the game world with interactive objects based on the design: Bases, Units, and Asteroids.
+**Goal:** Create an Object-Oriented structure to handle game entities and render them on the Canvas.
+
+**Requirements:**
+
+1.  **The Base Entity Class (`Entity.js`):**
+    * Create a class `Entity` in `src/game/entities/`.
+    * **Properties:** `x`, `y`, `radius` (or width/height), `color`, `team` ('player', 'enemy', 'neutral'), `health`, `maxHealth`.
+    * **Methods:**
+        * `draw(ctx)`: A base method to render the entity.
+        * `update(deltaTime)`: A base method for logic.
+
+2.  **Specific Game Objects (Inheritance):**
+    * **`BaseStation` (extends Entity):**
+        * Static building.
+        * Color: Yellow (Player) / Blue (Enemy).
+        * High Health (e.g., 1000).
+        * Visual: Draw a large square or hexagon.
+    * **`Asteroid` (extends Entity):**
+        * Static, Neutral team.
+        * Property: `resources` (int, e.g., 500).
+        * Visual: Grey irregular shape or circle.
+    * **`Unit` (extends Entity):**
+        * Mobile actor.
+        * Properties: `speed`, `targetX`, `targetY`, `state` ('IDLE', 'MOVING', 'MINING').
+        * Visual: Small circle or triangle.
+
+3.  **Updating the Game Engine:**
+    * In `GameEngine.js`, add arrays to store these objects:
+        * `this.units = []`
+        * `this.buildings = []`
+        * `this.asteroids = []`
+    * Update the `init()` method to populate the map:
+        * Place Player Base at (100, 100).
+        * Place Enemy Base at (MapWidth-100, MapHeight-100).
+        * Spawn 5-7 Asteroids at random positions in the center.
+    * Update the `draw(ctx)` loop to iterate through all arrays and call `.draw(ctx)` on every object.
+    * Update the `update(dt)` loop to call `.update(dt)` on every object.
+
+4.  **Helper Utils:**
+    * Create a simple utility function `drawHealthBar(ctx, x, y, hp, maxHp)` to render a small green/red bar above units.
+
+**Output:**
+Provide the code for `Entity.js`, `BaseStation.js`, `Asteroid.js`, `Unit.js`, and the updated `GameEngine.js` with the population logic.
+
+```
+
+---
+
+**Что будет после этого шага:**
+У тебя на экране появятся желтая база, синяя база, серые астероиды. Они будут стоять на месте. Когда получишь код от ИИ и внедришь его, пиши "next" — перейдем к самому интересному: **движению, кликам и добыче ресурсов**.
+
+Вот **Часть 3** Технического Задания.
+
+В этой части мы превращаем "картинку" в игру. Мы добавим **управление** (клики/тапы), **логику движения** юнитов и ту самую механику **добычи ресурсов** (майнинг), которую ты описывал.
+
+Копируй текст ниже и отправляй ИИ.
+
+---
+
+### ТЗ Часть 3: Управление, Движение и Экономика
+
+**Prompt for AI:**
+
+```markdown
+**Task 3: Input Handling, Movement Logic, and Mining Economy**
+
+**Context:**
+We have static entities rendering on the screen. Now we need to make them interactive. The player must be able to select units, move them, and command them to gather resources from asteroids.
+
+**Requirements:**
+
+1.  **Input Handling (in `GameEngine.js`):**
+    * Add an event listener for `pointerdown` (covers both mouse and touch) on the canvas.
+    * **Selection Logic:** When clicked, calculate distance to all player units. If distance < unit radius, set this unit as `selectedUnit`.
+    * **Command Logic:** If a unit is already selected and the user clicks:
+        * On Empty Space: Set unit target to those coordinates (Move).
+        * On Asteroid: Set unit target to the asteroid (Mine).
+    * **Visual:** Draw a selection circle (e.g., cyan ring) under the `selectedUnit` in the `draw()` method.
+
+2.  **Movement Implementation (in `Unit.js`):**
+    * Update `update(dt)` method.
+    * **Vector Math:** Calculate the vector to `targetX, targetY`. Normalize it and multiply by `speed * dt`. Update `x` and `y`.
+    * **Stop Condition:** If distance to target < 5 pixels, stop moving.
+
+3.  **Mining Mechanic (The Core Loop):**
+    * Add state to `Unit`: `MINING`.
+    * If the user clicked an Asteroid, the unit moves to it.
+    * When within range (e.g., 50px) of the Asteroid:
+        * Stop moving.
+        * Switch state to `MINING`.
+    * **Mining Logic:**
+        * Every 1 second (use a timer accumulator), reduce Asteroid `resources` by 10 and increase Player `credits` by 10.
+        * **Visual:** Draw a thin laser line from the Unit to the Asteroid center while mining.
+        * If Asteroid `resources` <= 0, remove the asteroid and stop mining.
+
+4.  **React <-> Game Bridge (UI Updates):**
+    * The `GameEngine` needs to notify the React UI when money changes.
+    * Add a callback `onGameStateChange` to the `GameEngine` constructor.
+    * Call this callback whenever credits change so React can update the HTML header counter.
+
+**Output:**
+Provide the updated `Unit.js` with movement/mining logic, the updated `GameEngine.js` with input handling, and the snippet for the React component showing how to listen for money updates.
+
+```
+
+---
+
+**Что будет после этого шага:**
+Ты сможешь кликнуть на своего юнита, отправить его к астероиду, он долетит, включит лазер, и счетчик денег начнет расти.
+
+Как только получишь код и проверишь его — пиши "next" для финальной части (Бой, Строительство и Интеграция в Telegram).
+
+Вот финальная **Часть 4** Технического Задания.
+
+В этой части мы добавляем **сражения** (чтобы игра не была просто симулятором шахтера), возможность **тратить деньги** на новых юнитов и, самое главное, интегрируем это всё в **Telegram** с безопасной проверкой на Python-бэкенде.
+
+Копируй текст ниже и отправляй ИИ.
+
+---
+
+### ТЗ Часть 4: Боевая система, Строительство и Интеграция в Telegram
+
+**Prompt for AI:**
+
+```markdown
+**Task 4: Combat System, Unit Production, and Telegram Integration**
+
+**Context:**
+We have movement and economy. Now we need to implement the "RTS" part (combat) and finalize the Telegram Mini App integration.
+
+**Requirements:**
+
+1.  **Combat Logic (in `Unit.js` & `GameEngine.js`):**
+    * Add properties to `Unit`: `attackRange` (e.g., 100px), `damage` (e.g., 10), `cooldown` (time between shots).
+    * **Auto-Targeting:** In the `update()` loop, if a unit is IDLE or MOVING, check for enemies within `attackRange`.
+    * **Attack Behavior:**
+        * If an enemy is found: Stop moving, switch state to `ATTACKING`.
+        * Every `cooldown` seconds: Reduce target's `health`.
+        * **Visual:** Draw a distinct laser color (e.g., Red) or a projectile from attacker to target.
+    * **Death Logic:** In `GameEngine.update()`, filter out any Entity where `health <= 0`.
+    * **Game Over:** If a `BaseStation` is destroyed, pause the loop and trigger an `onGameOver(winner)` callback.
+
+2.  **Unit Production (React + Engine):**
+    * In `GameEngine`, add a method `spawnUnit(type)`.
+        * Check if Player has enough `credits`.
+        * If yes: Deduct credits, spawn a new `Unit` near the Player Base (add a small random offset so they don't stack perfectly), and return `true`.
+        * If no: Return `false`.
+    * **UI:** Create a `BuildMenu.jsx` component overlay.
+        * Buttons: "Miner ($50)", "Fighter ($150)".
+        * On Click: Call `gameEngine.spawnUnit('miner')`.
+
+3.  **Telegram Mini App Integration (Frontend):**
+    * Install `@twa-dev/sdk`.
+    * In `main.jsx` (or root), call `WebApp.ready()`.
+    * Send `WebApp.initData` as a header in requests to the backend.
+
+4.  **Backend Validation (Python/FastAPI):**
+    * In `main.py`, implement a dependency or function to validate the Telegram Web App data.
+    * **Logic:**
+        1. Receive `initData` string.
+        2. Parse the query string.
+        3. Sort keys alphabetically.
+        4. Construct the data-check-string.
+        5. Calculate HMAC-SHA256 signature using the Bot Token.
+        6. Compare with the received `hash`.
+    * *Note:* Use a hardcoded dummy token for local dev, but structure the code to accept a real token from ENV variables.
+
+**Output:**
+Provide:
+1. The Combat/Targeting logic snippet for `Unit.js`.
+2. The `spawnUnit` method for `GameEngine`.
+3. The Python FastAPI code for validating Telegram `initData`.
+
+```
+
+---
+
+### Что делать дальше?
+
+Поздравляю! После выполнения этой части у тебя будет работающий прототип (MVP).
+
+**Твои следующие шаги (уже самостоятельно или с новыми запросами):**
+
+1. **Замени квадратики на картинки:** Возьми спрайты из своего рисунка (можно вырезать в Photoshop или попросить ИИ сгенерировать похожие) и замени метод `ctx.fillRect` на `ctx.drawImage`.
+2. **Баланс:** Сейчас цифры (цена 50, урон 10) взяты с потолка. Тебе нужно будет поиграть и настроить их, чтобы было интересно.
+3. **Деплой:** Залить фронтенд на Vercel/GitHub Pages, а бэкенд на любой хостинг, и подключить к боту в BotFather.
+
+Если что-то сломается в коде от ИИ — просто скидывай ошибку мне, починим! Удачи с разработкой! 🚀
+
+Поздравляю! Мы закончили основное техническое ядро (MVP). У тебя есть 4 части ТЗ, которые создают работающую игру: от запуска до стрельбы и экономики.
+
+Но сейчас игра выглядит как набор геометрических фигур (квадраты стреляют в круги). Поскольку твой изначальный концепт базировался на **визуальном стиле**, следующим логичным шагом будет замена "заглушек" на реальную графику.
+
+Вот **Бонусная Часть 5**, которая научит движок работать с картинками (спрайтами), а не просто рисовать квадраты.
+
+Копируй и отправляй ИИ:
+
+---
+
+### ТЗ Часть 5 (Бонус): Графический движок и Спрайты
+
+**Prompt for AI:**
+
+```markdown
+**Task 5: Visual Upgrade - Sprite System and Assets**
+
+**Context:**
+The game logic works, but it currently renders using simple shapes (`ctx.fillRect`). We need to switch to using image sprites to match the intended pixel-art style.
+
+**Requirements:**
+
+1.  **Asset Loader (`src/game/AssetLoader.js`):**
+    * Create a class or utility to preload images.
+    * It should take a dictionary of assets, e.g.:
+      ```javascript
+      const assets = {
+        playerBase: '/sprites/base_player.png',
+        enemyBase: '/sprites/base_enemy.png',
+        unitMiner: '/sprites/unit_miner.png',
+        unitFighter: '/sprites/unit_fighter.png',
+        asteroid: '/sprites/asteroid.png',
+        background: '/sprites/space_bg.png'
+      };
+      ```
+    * Return a Promise that resolves when all images are loaded, so the game doesn't start until graphics are ready.
+
+2.  **Update `GameObject` & Rendering:**
+    * Add a `sprite` property to the `GameObject` class.
+    * Update the `draw(ctx)` method in `Entity.js`:
+        * Instead of drawing a rect/circle, use `ctx.drawImage()`.
+        * **Rotation:** Implement context rotation so units face their target.
+          * Use `ctx.save()`, `ctx.translate(x, y)`, `ctx.rotate(angle)`, `ctx.drawImage(...)`, `ctx.restore()`.
+    * Update `Unit.js` to calculate `this.angle` based on movement velocity (using `Math.atan2`).
+
+3.  **Background:**
+    * In `GameEngine.draw()`, before drawing entities, draw the `background` image (tiled or stretched) or implement a simple "Starfield" (random white dots moving slowly) if no image is provided.
+
+4.  **Polish Effects:**
+    * **Lasers:** Make the mining laser pulse (change opacity over time).
+    * **Engine Trails:** Draw small particles behind moving units.
+
+**Output:**
+Provide the `AssetLoader` code, the updated `draw` method with rotation logic, and instructions on where to place the .png files in the project folder.
+
+```
+
+---
+
+### 🚀 Как запустить то, что написал ИИ?
+
+Ты получил много кода от ИИ. Теперь его нужно собрать. Вот краткая инструкция для тебя, как "СЕО проекта":
+
+1. **Подготовка папок:**
+* Создай папку `SpaceRTS`.
+* Внутри создай `backend` и `frontend`.
+
+
+2. **Бэкенд:**
+* В папку `backend` положи код `main.py` и `requirements.txt` (если ИИ его дал, если нет — создай файл и напиши там `fastapi uvicorn`).
+* Запуск в терминале: `uvicorn main:app --reload`.
+
+
+3. **Фронтенд:**
+* В папке `frontend` открой терминал и напиши: `npm create vite@latest .` (выбери React + JavaScript).
+* Удали всё из папки `src` и вставь туда файлы, которые дал ИИ (по папкам `game`, `components`).
+* Запуск: `npm run dev`.
+
+
+
+**Твои файлы картинок:**
+Чтобы Часть 5 заработала, тебе понадобятся картинки `.png`.
+
+* Ты можешь вырезать их из своего рисунка в Photoshop.
+* Или попросить меня/ИИ сгенерировать их отдельно по одной.
+
+---
+
+**Что делаем дальше?**
+Я могу помочь тебе с **контентом** для игры, раз код уже пишется:
+
+1. Придумать **баланс** (сколько здоровья у базы, сколько стоит дрон, чтобы игра не длилась вечно).
+2. Написать текст для **промо-поста** в Telegram, чтобы позвать друзей тестировать.
+3. Сгенерировать **отдельные спрайты** (кораблики, астероиды) на прозрачном фоне, чтобы ты мог вставить их в игру.
+
+Что выберешь?
+
+Here is the **Game Balance Document** for your Space RTS MVP.
+
+I have designed this to ensure matches are fast-paced (3–5 minutes) and encourage aggressive play rather than camping. You can copy the **JSON config** at the bottom and give it directly to your AI programmer to paste into a `GameConfig.js` file.
+
+---
+
+### 1. Game Design Philosophy
+
+* **Fast Economy:** Money flows quickly. Players should not wait more than 10 seconds to build a basic unit.
+* **High Lethality:** Units die fast. This prevents the screen from getting too cluttered and performance from dropping.
+* **The "Triangle" (Rock-Paper-Scissors):**
+* **Fighter** beats **Miner** (easy kill).
+* **Tank** beats **Fighter** (high HP).
+* **Kamikaze** beats **Tank** (massive burst damage).
+
+
+
+---
+
+### 2. Global Settings
+
+* **Starting Credits:** `$150` (Enough for 3 Miners OR 1 Fighter).
+* **Frame Rate:** 60 FPS.
+* **Map Size:** 2000x2000 pixels.
+
+### 3. Economy (Asteroids & Mining)
+
+* **Asteroid Total Resources:** `500` credits per asteroid. (Forces players to move to new asteroids when one depletes).
+* **Mining Rate:** `$10` per second per Miner.
+* **Mining Range:** `60` pixels (Miner must be close to the rock).
+
+---
+
+### 4. Buildings (The Base)
+
+The Base is the "King". If it dies, the game ends.
+
+| Entity | HP | Armor | Description |
+| --- | --- | --- | --- |
+| **Base Station (HQ)** | **2000** | 0 | The main target. Large hitbox. Regenerates 1 HP/sec (slow repair). |
+
+---
+
+### 5. Units (The Army)
+
+Here are the stats.
+
+* **Cost:** How many credits to build.
+* **HP:** Health Points.
+* **Damage:** Damage per hit.
+* **Speed:** Pixels per frame (or relative speed).
+* **Cooldown:** Time between shots (Attack Speed).
+
+#### **A. The Miner (Worker)**
+
+* **Role:** Economy. Weak and defenseless.
+* **Cost:** `$50`
+* **HP:** `50` (Dies in 2 shots from a Fighter).
+* **Damage:** `0` (Cannot attack).
+* **Speed:** `3.0` (Medium).
+
+#### **B. The Fighter (Standard Unit)**
+
+* **Role:** Basic attacker. Good against Miners and Base.
+* **Cost:** `$150`
+* **HP:** `120`
+* **Damage:** `20` per shot.
+* **Cooldown:** `1.0s` (1 shot per second).
+* **Range:** `150` px.
+* **Speed:** `4.0` (Fast).
+
+#### **C. The Tank (Heavy Unit)**
+
+* **Role:** Damage sponge. Slow but hits hard.
+* **Cost:** `$350`
+* **HP:** `400` (Very tanky).
+* **Damage:** `50` per shot.
+* **Cooldown:** `2.0s` (Slow fire rate).
+* **Range:** `200` px.
+* **Speed:** `1.5` (Slow).
+
+#### **D. The Kamikaze (Special)**
+
+* **Role:** Base destroyer / Tank buster. Explodes on contact.
+* **Cost:** `$100`
+* **HP:** `40` (Very fragile - must be protected).
+* **Damage:** `500` (Massive Area of Effect damage).
+* **Range:** `20` px (Melee).
+* **Speed:** `6.0` (Very Fast).
+
+---
+
+### 6. JSON Config (For the Programmer)
+
+Give this block to your AI assistant. It creates a centralized configuration file so you can tweak numbers later without digging through code.
+
+```json
+// src/config/GameConfig.js
+
+export const GAME_CONFIG = {
+  economy: {
+    startingCredits: 150,
+    miningRatePerSecond: 10, // Credits gained per second per miner
+    asteroidTotalResources: 500
+  },
+  base: {
+    hp: 2000,
+    width: 120,
+    height: 120,
+    regenRate: 1 // HP per second
+  },
+  units: {
+    miner: {
+      id: 'miner',
+      name: 'Drone',
+      cost: 50,
+      hp: 50,
+      speed: 3,
+      damage: 0,
+      attackRange: 60, // Mining range
+      attackCooldown: 1000, // ms
+      color: '#00FFFF' // Cyan
+    },
+    fighter: {
+      id: 'fighter',
+      name: 'Interceptor',
+      cost: 150,
+      hp: 120,
+      speed: 4,
+      damage: 20,
+      attackRange: 150,
+      attackCooldown: 1000, // 1 second
+      color: '#FF0000' // Red
+    },
+    tank: {
+      id: 'tank',
+      name: 'Heavy Cruiser',
+      cost: 350,
+      hp: 400,
+      speed: 1.5,
+      damage: 50,
+      attackRange: 200,
+      attackCooldown: 2000, // 2 seconds
+      color: '#00FF00' // Green
+    },
+    kamikaze: {
+      id: 'kamikaze',
+      name: 'Boom Bot',
+      cost: 100,
+      hp: 40,
+      speed: 6,
+      damage: 500, // Self destruct damage
+      attackRange: 30, // Collision range
+      attackCooldown: 0,
+      color: '#FFA500' // Orange
+    }
+  }
+};
+
+```
+
+**Next Step?**
+Would you like me to generate the **transparent sprites** (images) for these units now, so you can replace the colored squares with cool pixel art?
+
+This expanded gameplay design focuses on making the game **tactically deep** but **mechanically simple** (since it's for mobile/Telegram).
+
+Here is a detailed breakdown of the gameplay loops, combat mechanics, and environmental interactions.
+
+---
+
+### 1. The Fog of War & Radar System
+
+In your original drawing, you included a **Radar**. This is crucial for suspense.
+
+* **The Mechanic:** The map is covered in a dark overlay (Fog). You can only see enemies if they are within the vision range of your Base or your Units.
+* **Gameplay Impact:**
+* Players can't just send units directly to the enemy base; they have to scout.
+* **Ambush Tactics:** You can hide "Kamikaze" units behind a large asteroid. If the enemy walks by without a scout, you blow them up.
+* **The Radar Module:** Building/Upgrading the Radar at your base increases the vision radius of the base itself, giving you early warning of incoming attacks.
+
+
+
+### 2. Asteroid Physics & "Cover"
+
+Asteroids shouldn't just be money; they should be **terrain**.
+
+* **Line of Sight (LOS):** Units cannot shoot *through* asteroids.
+* **Choke Points:** If three asteroids are close together, large units (like the Tank) might get stuck or have to move in single file.
+* **Gameplay Impact:**
+* You can retreat a damaged unit behind an asteroid to save it from laser fire.
+* Smart players will fight in open space; defensive players will hide in the asteroid belt.
+
+
+
+### 3. Advanced Combat Mechanics (Rock-Paper-Scissors)
+
+We defined the stats earlier, but here is how they play out in the game:
+
+* **The "Kiting" Technique (Fighter vs. Tank):**
+* The Fighter is faster (Speed 4) than the Tank (Speed 1.5).
+* A skilled player can shoot the Tank, run away before the Tank fires, turn around, and shoot again. This is called "Kiting." It rewards skill over just having more units.
+
+
+* **The "Swarm" Tactic (Miners vs. Fighter):**
+* One Miner loses to one Fighter.
+* But Miners are cheap ($50). If you are desperate, you can send 10 Miners to surround one Fighter. They will die, but they might save your base.
+
+
+* **The "Suicide Run" (Kamikaze):**
+* The Kamikaze unit should explode not just on enemy units, but also deal massive damage to **Asteroids**.
+* *Strategy:* You can use a Kamikaze to blow up an asteroid that the enemy is hiding behind to remove their cover.
+
+
+
+### 4. Modular Base Gameplay (Based on your drawing)
+
+Your drawing showed modules attached to the base. In the MVP, these should be upgradeable passive bonuses.
+
+* **Module A: The Solar Array (Generator)**
+* *Effect:* Increases Passive Credit Generation (e.g., +$1/sec automatically).
+* *Why:* Helps you recover if your Miners get killed.
+
+
+* **Module B: The Fab-Lab (Factory)**
+* *Effect:* Reduces Unit Production Time by 20%.
+* *Why:* Essential for the late game when you need to spam units quickly.
+
+
+* **Module C: The Repair Arm**
+* *Effect:* Automatically heals nearby units.
+* *Why:* Encourages players to bring damaged units back home instead of letting them die.
+
+
+
+### 5. Control Scheme (Mobile UX)
+
+Since there is no mouse or keyboard, the controls must be "Thumb-Friendly."
+
+* **Select All Army Button:** A button on the UI that instantly selects all combat units (ignoring Miners). This is vital for a quick panic defense.
+* **Double Tap:**
+* Tap a Unit: Selects it.
+* Double Tap a Unit: Selects **all units of that type** on the screen (e.g., select all Fighters).
+
+
+* **Drag Select (Stretch Goal):** If possible, allow the user to drag their finger to create a box and select multiple units.
+
+### 6. The "Game Over" Flow
+
+How does the match end?
+
+1. **HQ Destruction:** When the Base HP hits 0, it creates a massive explosion animation.
+2. **Loot Drop:** In the Telegram context, the winner should "steal" resources from the loser (simulated).
+3. **Result Screen:**
+* "Mission Complete"
+* Units Lost: 12
+* Resources Mined: 4500
+* **Button:** "Play Again" or "Share Replay to Chat" (Great for viral growth in Telegram).
+
+
+
+---
+
+### What would you like to do next?
+
+1. **Generate the Sprites:** I can create the pixel-art assets for the ships, base, and asteroids right now (on transparent backgrounds).
+2. **Code the "Fog of War":** I can give your AI programmer the algorithm to hide enemies.
+3. **Write the "Game Loop" Logic:** I can explain how to code the state machine (Start Screen -> Game -> Game Over).

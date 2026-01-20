@@ -1,0 +1,12 @@
+# SpaceRTS
+node_modules/
+dist/
+build/
+.env
+__pycache__/
+*.pyc
+.DS_Store
+.vscode/
+.idea/
+venv/
+*.log
