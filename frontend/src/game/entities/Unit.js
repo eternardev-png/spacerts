@@ -5,7 +5,8 @@ import { GAME_CONFIG } from '../../config/GameConfig';
 export class Unit extends GameObject {
     constructor(x, y, team, type, upgrades = {}) {
         const config = GAME_CONFIG.units[type];
-        super(x, y, 20, 20, config.color, team);
+        // Use hitRadius * 2 as visual size base
+        super(x, y, config.hitRadius * 2, config.hitRadius * 2, config.color, team);
 
         this.type = type;
 
@@ -16,6 +17,11 @@ export class Unit extends GameObject {
         this.speed = config.speed * 60 * (1 + speedBonus);
         this.maxHealth = config.hp * (1 + hpBonus);
         this.health = this.maxHealth;
+        this.hitRadius = config.hitRadius || 20;
+
+        // Cargo
+        this.cargo = 0;
+        this.maxCargo = config.capacity || 0;
 
         this.damage = config.damage;
         this.attackRange = config.attackRange;
@@ -86,21 +92,44 @@ export class Unit extends GameObject {
             ctx.fillStyle = this.color;
         }
 
-        // Triangle for Units
+        const size = this.hitRadius;
+
+        // Save context for rotation
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation || 0);
+
         ctx.beginPath();
-        ctx.moveTo(this.x, this.y - 10);
-        ctx.lineTo(this.x + 10, this.y + 10);
-        ctx.lineTo(this.x - 10, this.y + 10);
+        ctx.moveTo(0, -size);             // Tip
+        ctx.lineTo(size, size);           // Bottom Right
+        ctx.lineTo(-size, size);          // Bottom Left
         ctx.closePath();
         ctx.fill();
 
+        ctx.restore();
+
         // Draw Health Bar
-        const barWidth = 20;
+        const barWidth = size * 2;
         const hpPercent = this.health / this.maxHealth;
+
+        const hpY = this.y - size - 10;
+
         ctx.fillStyle = 'red';
-        ctx.fillRect(this.x - 10, this.y - 20, barWidth, 4);
+        ctx.fillRect(this.x - size, hpY, barWidth, 4);
         ctx.fillStyle = '#00FF00';
-        ctx.fillRect(this.x - 10, this.y - 20, barWidth * hpPercent, 4);
+        ctx.fillRect(this.x - size, hpY, barWidth * hpPercent, 4);
+
+        // Draw Cargo Bar (if Miner and has cargo)
+        if (this.maxCargo > 0) {
+            const cargoPercent = this.cargo / this.maxCargo;
+            if (cargoPercent > 0) {
+                const cargoY = hpY - 6; // Above HP bar
+                ctx.fillStyle = '#555';
+                ctx.fillRect(this.x - size, cargoY, barWidth, 4);
+                ctx.fillStyle = '#FFD700'; // Gold
+                ctx.fillRect(this.x - size, cargoY, barWidth * cargoPercent, 4);
+            }
+        }
 
         // Draw Mining Laser
         if (this.state === 'MINING' && this.targetEntity) {
@@ -110,6 +139,11 @@ export class Unit extends GameObject {
             ctx.moveTo(this.x, this.y);
             ctx.lineTo(this.targetEntity.x, this.targetEntity.y);
             ctx.stroke();
+        }
+
+        // Draw Returning Beam? Or text?
+        if (this.state === 'RETURNING') {
+            // Maybe a small icon or text?
         }
 
         // Draw Attack Laser

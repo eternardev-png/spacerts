@@ -17,7 +17,7 @@ export function MainMenu({ onPlay, onHangar }) {
                     fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px cyan'
                 }}
             >
-                DEPLOY
+                START
             </button>
 
             <button

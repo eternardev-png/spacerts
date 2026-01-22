@@ -3,10 +3,10 @@ export class Particle {
         this.x = x;
         this.y = y;
         this.color = color;
-        this.velocity = velocity || { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 };
-        this.life = 1.0; // 1 second
-        this.decay = 2.0; // Life loss per second
-        this.size = Math.random() * 3 + 1;
+        this.velocity = velocity || { x: (Math.random() - 0.5) * 50, y: (Math.random() - 0.5) * 50 };
+        this.life = 1.0;
+        this.decay = 1.0 + Math.random(); // Random decay
+        this.size = Math.random() * 5 + 2;
     }
 
     update(dt) {
